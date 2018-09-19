@@ -1,4 +1,5 @@
 import time
+from itertools import chain
 # import gc
 
 import numpy as np
@@ -12,6 +13,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
         
+
 class Timer(object):
     
     def __init__(self, verbose=True):
@@ -88,9 +90,17 @@ def horizon_plot(df, key, width, cut='fixed', start='start', chrom='chrom', pop=
     col_iterators = zip(*(horizon(row, key, cut) for row in row_iter))
     col_names = ('yp1', 'yp2', 'yp3', 'yp4', 
                  'yn1', 'yn2', 'yn3', 'yn4')
-    df2 = (df.copy(deep=False)
+
+    # df2 = (df.copy(deep=False)
+    #        .assign(**dict(zip(col_names, col_iterators)))
+    #       )
+    df2 = (df[[key, start, chrom, pop]]
            .assign(**dict(zip(col_names, col_iterators)))
           )
+
+    df3 = pd.DataFrame(dict((col, list(chain.from_iterable(zip(df2[col].values, df2[col].values)))) for col in df2))
+    df3[start] = list(df3[start].values[1:]) + [df3[start].values[-1] + width]
+    df2 = df3
 
     # chromosome names
     chrom_names = list(df.groupby(chrom).groups.keys())
@@ -141,11 +151,11 @@ def horizon_plot(df, key, width, cut='fixed', start='start', chrom='chrom', pop=
         for col_name, colour in zip(col_names, colours):
             plt.setp(g.fig.texts, text="") # hack to make y facet labels align...
             # map barplots to each facet
-            g.map(plt.bar, 
+            g.map(plt.fill, 
                   start, 
                   col_name, 
-                  edgecolor = "none", 
-                  width=width, 
+#                  edgecolor = "none", 
+#                  width=width, 
                   color=colour)
             # no tick labels on x
             # g.set(xticklabels=[])
@@ -219,15 +229,23 @@ if __name__ == "__main__":
 
     df = pd.concat([df1, df2])
 
-    print(df.head())
+#    print(df.head())
+
+    # with Timer() as t:
+    #     with SwapContext("notebook", font_scale=0.5):
+    #         fig = horizon_plot(df, 'pi', width=1, pop='pop')#, cut=0.32)
+    #         print('done')
+    #         # save to file
+    # plt.savefig('tmp.pdf')
+    # #         fig.clf() # clean up memory
+    # plt.close(fig)  # close to allow garbage collection, also suppresses inline plot
+    # #         gc.collect()
 
     with Timer() as t:
-        with SwapContext("notebook", font_scale=0.5):
-            fig = horizon_plot(df, 'pi', width=1, pop='pop')#, cut=0.32)
-            print('done')
-            # save to file
+        fig = horizon_plot(df, 'pi', width=1, pop='pop')#, cut=0.32)
+        print('done')
+        # save to file
     plt.savefig('tmp.pdf')
-    #         fig.clf() # clean up memory
     plt.close(fig)  # close to allow garbage collection, also suppresses inline plot
     #         gc.collect()
 
