@@ -12,68 +12,52 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-        
+from math import isclose, floor, log10
 
-class Timer(object):
+def horizon(row, i, cut):
+    """
+    Compute the values for the three 
+    positive and negative intervals.
+    """
+    val = getattr(row, i)
+
+    if val < 0:
+        for i in range(4):
+            yield 0
+
+    val = abs(val)
+    for i in range(3):
+        yield min(cut, val)
+        val = max(0, val-cut)
+    yield int(not isclose(val, 0, abs_tol=1e-8)) * cut
+
+    if val >= 0:
+        for i in range(4):
+            yield 0
+
+def chrom_sort(item):
+    """
+    Sorts in a meaningful way for chromosomes.
+    """
+    if item.startswith('chr'):
+        item = item[3:]
+    if item.isdigit():
+        return int(item)
+    else:
+        return item
+
+def round_to_1_signif(x):
+    """
+    Rounds to first significant digit.
+    """
+    return round(x, -int(floor(log10(abs(x)))))
     
-    def __init__(self, verbose=True):
-        self.verbose = verbose
-
-    def __enter__(self):
-        self.start = time.time()
-        return self
-
-    def __exit__(self, *args):
-        self.end = time.time()
-        self.secs = self.end - self.start
-        if self.verbose:
-            print('elapsed time: {} secs'.format(self.secs))
-
-
-def horizon_plot(df, key, width, cut='fixed', start='start', chrom='chrom', pop='pop', pop_sorting=None):
+def horizon_plot(df, key, width, cut='fixed', start='start', col='chrom', row='pop', pop_sorting=None, size=0.5, aspect=40):
     """
     Horizon bar plot made allowing multiple chromosomes and multiple samples.
     """
-    
-    from math import isclose, floor, log10
-    
-    def horizon(row, i, cut):
-        """
-        Compute the values for the three 
-        positive and negative intervals.
-        """
-        val = getattr(row, i)
 
-        if val < 0:
-            for i in range(4):
-                yield 0
-
-        val = abs(val)
-        for i in range(3):
-            yield min(cut, val)
-            val = max(0, val-cut)
-        yield int(not isclose(val, 0, abs_tol=1e-8)) * cut
-
-        if val >= 0:
-            for i in range(4):
-                yield 0
-
-    def chrom_sort(item):
-        """
-        Sorts in a meaningful way for chromosomes.
-        """
-        if item.startswith('chr'):
-            item = item[3:]
-        if item.isdigit():
-            return int(item)
-        else:
-            return item
-
-    def round_to_1_signif(x):
-        """
-        Rounds to first significant digit.
-        """
-        return round(x, -int(floor(log10(abs(x)))))
+    pop, chrom = row, col
         
     # set cut if not set
     if cut is 'fixed':
@@ -84,23 +68,33 @@ def horizon_plot(df, key, width, cut='fixed', start='start', chrom='chrom', pop=
     # 'fixed' (default) computing a shared cutoff for all rows
     # 'adaptive' computing a cutoff that fits each row.
 
-
     # make the data frame to plot
     row_iter = df.itertuples()
     col_iterators = zip(*(horizon(row, key, cut) for row in row_iter))
-    col_names = ('yp1', 'yp2', 'yp3', 'yp4', 
-                 'yn1', 'yn2', 'yn3', 'yn4')
+    col_names = ['yp1', 'yp2', 'yp3', 'yp4', 
+                 'yn1', 'yn2', 'yn3', 'yn4']
 
-    # df2 = (df.copy(deep=False)
-    #        .assign(**dict(zip(col_names, col_iterators)))
-    #       )
     df2 = (df[[key, start, chrom, pop]]
            .assign(**dict(zip(col_names, col_iterators)))
           )
 
     df3 = pd.DataFrame(dict((col, list(chain.from_iterable(zip(df2[col].values, df2[col].values)))) for col in df2))
-    df3[start] = list(df3[start].values[1:]) + [df3[start].values[-1] + width]
+    #df3[start] = list(df3[start].values[1:]) + [df3[start].values[-1] + width]
+    df3[start] = df3.groupby(row).start.apply(lambda sr: pd.concat([sr.iloc[1:], pd.Series([df3[start].iloc[-1] + width])])).values
+
     df2 = df3
+
+    # # instead group df2 by col, row and add bounds to each group
+    # def add_boundries(df):
+    #     df = df.copy()
+    #     begin, end = df.iloc[0], df.iloc[-1]
+    #     begin[col_names], end[col_names] = 0, 0
+    #     df = pd.concat([begin.to_frame().T, df, end.to_frame().T], ignore_index=True)
+    #     print(df.head(1))
+    #     print(df.tail(1))
+    #     print()
+    #     return df
+    # df2 = df2.groupby([col, row]).apply(add_boundries)
 
     # chromosome names
     chrom_names = list(df.groupby(chrom).groups.keys())
@@ -132,9 +126,10 @@ def horizon_plot(df, key, width, cut='fixed', start='start', chrom='chrom', pop=
                           row=pop,
                           # sharex=False,
                           sharex=True,
+                          sharey=True,
                           # margin_titles=True,
-                          size=0.5, 
-                          aspect=40,
+                          size=size, 
+                          aspect=aspect,
                           col_order=sorted_chrom_names,
                           row_order=pop_sorting,                      
                           gridspec_kws={'hspace':0.0, 
@@ -151,17 +146,13 @@ def horizon_plot(df, key, width, cut='fixed', start='start', chrom='chrom', pop=
         for col_name, colour in zip(col_names, colours):
             plt.setp(g.fig.texts, text="") # hack to make y facet labels align...
             # map barplots to each facet
-            g.map(plt.fill, 
+            g.map(plt.fill_between, 
                   start, 
                   col_name, 
-#                  edgecolor = "none", 
-#                  width=width, 
+                  y2=0,
                   color=colour)
-            # no tick labels on x
-            # g.set(xticklabels=[])
-            #g.set_titles('{col_name}', '{row_name}')
-    
-        g.set_ylabels('')
+
+        # g.set_ylabels('')
 
         def add_pop_labels(pop_label, **kwargs):
             # only rightmosts facets:
@@ -187,14 +178,12 @@ def horizon_plot(df, key, width, cut='fixed', start='start', chrom='chrom', pop=
                 ax.set_ylim(0, cut)
                 ax.set(xlabel='', ylabel='')
                 ax.set(xticks=np.arange(0, max_val, round_to_1_signif(max_val) / 10))
-                ax.set_yticks([ytic1, ytic1*2, ytic1*3])
-#                ax.set_yticks([])
+#                ax.set_yticks([ytic1, ytic1*2, ytic1*3])
+                ax.set_yticks([ytic1*1.5])
                 g.set_titles('', '')
               
         # remove top and right frame
         sns.despine()
-
-        #plt.tight_layout()
 
         plt.subplots_adjust(right=0.95)
         
@@ -202,52 +191,44 @@ def horizon_plot(df, key, width, cut='fixed', start='start', chrom='chrom', pop=
 
 if __name__ == "__main__":
     
-    class SwapContext():
+    # n = 1500
+    # df1 = pd.DataFrame({'chrom': ['chr1']*2*n + ['chr1']*2*n + ['chr1']*2*n + ['chr1']*2*n,
+    #                    'pop': ['hu']*1*n + ['ha']*1*n + ['hi']*1*n + ['ho']*1*n + ['hi']*1*n + ['baz']*1*n + ['bar']*1*n + ['foo']*1*n, 
+    #                    'start': list(range(1*n)) * 8, 
+    #                    'pi': list(np.sin(np.linspace(-np.pi, np.pi, 1*n))) * 8})
 
-        def __init__(self, *args, **kwargs):
-            self.args = args
-            self.kwargs = kwargs
-        
-        def __enter__(self):
-            self.orig = sns.plotting_context()
-            sns.set_context(*self.args, **self.kwargs)
-            
-        def __exit__(self, type, value, traceback):
-            sns.set_style(self.orig)
+    # df2 = pd.DataFrame({'chrom': ['chr2']*2*n + ['chr2']*2*n + ['chr2']*2*n + ['chr2']*2*n,
+    #                    'pop': ['hu']*1*n + ['ha']*1*n + ['hi']*1*n + ['ho']*1*n + ['hi']*1*n + ['baz']*1*n + ['bar']*1*n + ['foo']*1*n, 
+    #                    'start': list(range(1*n)) * 8, 
+    #                    'pi': list(np.sin(np.linspace(-np.pi, np.pi, 1*n))) * 8})
 
+    # df = pd.concat([df1, df2])
 
-    n = 1500
-    df1 = pd.DataFrame({'chrom': ['chr1']*2*n + ['chr1']*2*n + ['chr1']*2*n + ['chr1']*2*n,
-                       'pop': ['hu']*1*n + ['ha']*1*n + ['hi']*1*n + ['ho']*1*n + ['hi']*1*n + ['baz']*1*n + ['bar']*1*n + ['foo']*1*n, 
-                       'start': list(range(1*n)) * 8, 
-                       'pi': list(np.sin(np.linspace(-np.pi, np.pi, 1*n))) * 8})
+    # fig = horizon_plot(df, 'pi', width=1, col='chrom', row='pop')#, cut=0.32)
 
-    df2 = pd.DataFrame({'chrom': ['chr2']*2*n + ['chr2']*2*n + ['chr2']*2*n + ['chr2']*2*n,
-                       'pop': ['hu']*1*n + ['ha']*1*n + ['hi']*1*n + ['ho']*1*n + ['hi']*1*n + ['baz']*1*n + ['bar']*1*n + ['foo']*1*n, 
-                       'start': list(range(1*n)) * 8, 
-                       'pi': list(np.sin(np.linspace(-np.pi, np.pi, 1*n))) * 8})
-
-    df = pd.concat([df1, df2])
-
-#    print(df.head())
-
-    # with Timer() as t:
-    #     with SwapContext("notebook", font_scale=0.5):
-    #         fig = horizon_plot(df, 'pi', width=1, pop='pop')#, cut=0.32)
-    #         print('done')
-    #         # save to file
     # plt.savefig('tmp.pdf')
-    # #         fig.clf() # clean up memory
     # plt.close(fig)  # close to allow garbage collection, also suppresses inline plot
     # #         gc.collect()
 
-    with Timer() as t:
-        fig = horizon_plot(df, 'pi', width=1, pop='pop')#, cut=0.32)
-        print('done')
-        # save to file
+
+    n = 1000
+    pops = 30
+
+    df = pd.DataFrame({'chrom': ['chr1']*pops*n,
+                    'pop': [x for y in ([chr(65+i)]*n for i in range(pops)) for x in y],
+                    'start': list(range(1*n)) * pops, 
+#                    'pi': list(np.sin(np.linspace(-np.pi, 10*np.pi, 1*n))+0.1) * pops })
+                     'pi': np.add(list(np.sin(np.linspace(-np.pi, 10*np.pi, 1*n))) * pops, np.random.random(n*pops)) })
+ 
+    g = sns.FacetGrid(df, 
+                        col='chrom', 
+                        row='pop',
+                        sharex=True)
+    g.map(plt.plot, 'start', 'pi')
+
+    plt.savefig('tmp2.pdf')
+
+    fig = horizon_plot(df, 'pi', width=1, col='chrom', row='pop', size=0.3, aspect=20)
     plt.savefig('tmp.pdf')
-    plt.close(fig)  # close to allow garbage collection, also suppresses inline plot
-    #         gc.collect()
-
-
-    
+    # plt.close(fig)  # close to allow garbage collection, also suppresses inline plot
+    # #         gc.collect()
