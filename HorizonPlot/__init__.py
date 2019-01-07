@@ -128,7 +128,7 @@ def horizon_plot(df, key, width, cut='fixed', start='start', col='chrom', row='p
                           sharex=True,
                           sharey=True,
                           # margin_titles=True,
-                          size=size, 
+                          height=size, 
                           aspect=aspect,
                           col_order=sorted_chrom_names,
                           row_order=pop_sorting,                      
@@ -228,7 +228,7 @@ if __name__ == "__main__":
 
     plt.savefig('tmp2.pdf')
 
-    fig = horizon_plot(df, 'pi', width=1, col='chrom', row='pop', size=0.3, aspect=20)
+    fig = horizon_plot(df, 'pi', width=1, col='chrom', row='pop', height=0.3, aspect=20)
     plt.savefig('tmp.pdf')
     # plt.close(fig)  # close to allow garbage collection, also suppresses inline plot
     # #         gc.collect()
