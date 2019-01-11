@@ -109,7 +109,7 @@ def horizon_plot(df, key, width, cut='fixed', start='start', col='chrom', row='p
     # sizes of chromosomes
     chrom_sizes = list()
     for chrom_name in sorted_chrom_names:
-        chrom_subset = df.loc[df.chrom == chrom_name]
+        chrom_subset = df.loc[df[chrom] == chrom_name]
         est_chrom_len = np.max(chrom_subset.start) + width
         chrom_sizes.append(est_chrom_len)
         
