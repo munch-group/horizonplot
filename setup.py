@@ -13,6 +13,6 @@ setuptools.setup(name='horizonplot',
       install_requires=[
       'pandas>=1.0',
       'numpy>=1.1',
-      'seaborn>=0.1,
+      'seaborn>=0.1',
       'matplotlib>=3.2',
       ])

@@ -190,26 +190,6 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
         return g.fig
 
 if __name__ == "__main__":
-    
-    # n = 1500
-    # df1 = pd.DataFrame({'chrom': ['chr1']*2*n + ['chr1']*2*n + ['chr1']*2*n + ['chr1']*2*n,
-    #                    'pop': ['hu']*1*n + ['ha']*1*n + ['hi']*1*n + ['ho']*1*n + ['hi']*1*n + ['baz']*1*n + ['bar']*1*n + ['foo']*1*n, 
-    #                    'start': list(range(1*n)) * 8, 
-    #                    'pi': list(np.sin(np.linspace(-np.pi, np.pi, 1*n))) * 8})
-
-    # df2 = pd.DataFrame({'chrom': ['chr2']*2*n + ['chr2']*2*n + ['chr2']*2*n + ['chr2']*2*n,
-    #                    'pop': ['hu']*1*n + ['ha']*1*n + ['hi']*1*n + ['ho']*1*n + ['hi']*1*n + ['baz']*1*n + ['bar']*1*n + ['foo']*1*n, 
-    #                    'start': list(range(1*n)) * 8, 
-    #                    'pi': list(np.sin(np.linspace(-np.pi, np.pi, 1*n))) * 8})
-
-    # df = pd.concat([df1, df2])
-
-    # fig = horizon_plot(df, 'pi', width=1, col='chrom', row='pop')#, cut=0.32)
-
-    # plt.savefig('tmp.pdf')
-    # plt.close(fig)  # close to allow garbage collection, also suppresses inline plot
-    # #         gc.collect()
-
 
     n = 1000
     pops = 30
