@@ -52,7 +52,7 @@ def round_to_1_signif(x):
     """
     return round(x, -int(floor(log10(abs(x)))))
     
-def horizon_plot(df, key, width, cut='fixed', start='start', col='chrom', row='pop', pop_sorting=None, size=0.5, aspect=40):
+def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='pop', pop_sorting=None, size=0.5, aspect=40):
     """
     Horizon bar plot made allowing multiple chromosomes and multiple samples.
     """
@@ -228,7 +228,7 @@ if __name__ == "__main__":
 
     plt.savefig('tmp2.pdf')
 
-    fig = horizon_plot(df, 'pi', width=1, col='chrom', row='pop', height=0.3, aspect=20)
+    fig = horizonplot(df, 'pi', width=1, col='chrom', row='pop', size=0.3, aspect=20)
     plt.savefig('tmp.pdf')
     # plt.close(fig)  # close to allow garbage collection, also suppresses inline plot
     # #         gc.collect()
