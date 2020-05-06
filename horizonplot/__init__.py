@@ -1,4 +1,5 @@
 import time
+import warnings
 from itertools import chain
 # import gc
 
@@ -120,79 +121,83 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
     # make the plot
     with sns.axes_style("ticks"):
 
-        # make the facet grid
-        g = sns.FacetGrid(df2, 
-                          col=chrom, 
-                          row=pop,
-                          # sharex=False,
-                          sharex=True,
-                          sharey=True,
-                          # margin_titles=True,
-                          height=size, 
-                          aspect=aspect,
-                          col_order=sorted_chrom_names,
-                          row_order=pop_sorting,                      
-                          gridspec_kws={'hspace':0.0, 
-                                        "width_ratios": facet_widths_ratios}
-                         )
+        # ingore UserWarning from seaborn that tight_layout is not applied
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
-        # plot colors
-        colours = sns.color_palette("Blues", 3) + ['black'] + \
-                  sns.color_palette("Reds", 3) + ['grey']
+            # make the facet grid
+            g = sns.FacetGrid(df2, 
+                            col=chrom, 
+                            row=pop,
+                            # sharex=False,
+                            sharex=True,
+                            sharey=True,
+                            # margin_titles=True,
+                            height=size, 
+                            aspect=aspect,
+                            col_order=sorted_chrom_names,
+                            row_order=pop_sorting,                      
+                            gridspec_kws={'hspace':0.0, 
+                                            "width_ratios": facet_widths_ratios}
+                            )
 
-        # first y tick
-        ytic1 = round_to_1_signif(cut / 3)
+            # plot colors
+            colours = sns.color_palette("Blues", 3) + ['black'] + \
+                    sns.color_palette("Reds", 3) + ['grey']
 
-        for col_name, colour in zip(col_names, colours):
-            plt.setp(g.fig.texts, text="") # hack to make y facet labels align...
-            # map barplots to each facet
-            g.map(plt.fill_between, 
-                  start, 
-                  col_name, 
-                  y2=0,
-                  color=colour)
+            # first y tick
+            ytic1 = round_to_1_signif(cut / 3)
 
-        # g.set_ylabels('')
+            for col_name, colour in zip(col_names, colours):
+                plt.setp(g.fig.texts, text="") # hack to make y facet labels align...
+                # map barplots to each facet
+                g.map(plt.fill_between, 
+                    start, 
+                    col_name, 
+                    y2=0,
+                    color=colour)
 
-        def add_pop_labels(pop_label, **kwargs):
-            # only rightmosts facets:
-            ax = plt.gca()
-            if ax.get_position().x1 == max(x.get_position().x1 for x in g.axes.flat):
-                p = pop_label.reset_index(drop=True)[0]
-                plt.annotate(p, xy=(1.005 , 0.5), xycoords='axes fraction', ha='left', size=8)
+            # g.set_ylabels('')
 
-        g.map(add_pop_labels, pop)
+            def add_pop_labels(pop_label, **kwargs):
+                # only rightmosts facets:
+                ax = plt.gca()
+                if ax.get_position().x1 == max(x.get_position().x1 for x in g.axes.flat):
+                    p = pop_label.reset_index(drop=True)[0]
+                    plt.annotate(p, xy=(1.005 , 0.5), xycoords='axes fraction', ha='left', size=8)
 
-        def add_chrom_labels(chrom_label, **kwargs):
-            # only topmost facets:
-            ax = plt.gca()
-            if ax.get_position().y1 == max(x.get_position().y1 for x in g.axes.flat):
-                p = chrom_label.reset_index(drop=True)[0]
-                plt.annotate(p, xy=(0.5 , 1.1), xycoords='axes fraction', ha='center', size=8)
+            g.map(add_pop_labels, pop)
 
-        g.map(add_chrom_labels, chrom)
+            def add_chrom_labels(chrom_label, **kwargs):
+                # only topmost facets:
+                ax = plt.gca()
+                if ax.get_position().y1 == max(x.get_position().y1 for x in g.axes.flat):
+                    p = chrom_label.reset_index(drop=True)[0]
+                    plt.annotate(p, xy=(0.5 , 1.1), xycoords='axes fraction', ha='center', size=8)
 
-        for arr in g.axes:
-            for ax, max_val in zip(arr, facet_widths_ratios):
-                ax.set_xlim(0, max_val+1)
-                ax.set_ylim(0, cut)
-                ax.set(xlabel='', ylabel='')
-                ax.set(xticks=np.arange(0, max_val, round_to_1_signif(max_val) / 10))
-#                ax.set_yticks([ytic1, ytic1*2, ytic1*3])
-                ax.set_yticks([ytic1*1.5])
-                g.set_titles('', '')
-              
-        # remove top and right frame
-        sns.despine()
+            g.map(add_chrom_labels, chrom)
 
-        plt.subplots_adjust(right=0.95)
-        
-        return g.fig
+            for arr in g.axes:
+                for ax, max_val in zip(arr, facet_widths_ratios):
+                    ax.set_xlim(0, max_val+1)
+                    ax.set_ylim(0, cut)
+                    ax.set(xlabel='', ylabel='')
+                    ax.set(xticks=np.arange(0, max_val, round_to_1_signif(max_val) / 10))
+    #                ax.set_yticks([ytic1, ytic1*2, ytic1*3])
+                    ax.set_yticks([ytic1*1.5])
+                    g.set_titles('', '')
+                
+            # remove top and right frame
+            sns.despine()
+
+            plt.subplots_adjust(right=0.95)
+            
+            return g.fig
 
 if __name__ == "__main__":
 
-    n = 1000
-    pops = 30
+    n = 1500
+    pops = 50
 
     df = pd.DataFrame({'chrom': ['chr1']*pops*n,
                     'pop': [x for y in ([chr(65+i)]*n for i in range(pops)) for x in y],
@@ -208,7 +213,7 @@ if __name__ == "__main__":
 
     plt.savefig('tmp2.pdf')
 
-    fig = horizonplot(df, 'pi', width=1, col='chrom', row='pop', size=0.3, aspect=20)
+    fig = horizonplot(df, 'pi', width=1, col='chrom', row='pop', size=0.3, aspect=100)
     plt.savefig('tmp.pdf')
     # plt.close(fig)  # close to allow garbage collection, also suppresses inline plot
     # #         gc.collect()
