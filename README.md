@@ -4,10 +4,10 @@ See the notebook for an example.
 
 Install using conda:
 
-  conda install -c kaspermunch horizonplot
+    conda install -c kaspermunch horizonplot
   
 or using pip:
 
-  pip install horizonplot
+    pip install horizonplot
   
   
