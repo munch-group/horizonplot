@@ -2,7 +2,7 @@
 import setuptools
 
 setuptools.setup(name='horizonplot',
-      version='1.0',
+      version='1.0.1',
       author='Kasper Munch',
       description='Generates horizon plots.',
       # long_description=long_description,
@@ -14,5 +14,5 @@ setuptools.setup(name='horizonplot',
       'pandas>=1.0',
       'numpy>=1.1',
       'seaborn>=0.1',
-      'matplotlib>=3.2',
+      'matplotlib>=3.0',
       ])
