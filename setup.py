@@ -2,7 +2,7 @@
 import setuptools
 
 setuptools.setup(name='horizonplot',
-      version='1.0.1',
+      version='1.0.2',
       author='Kasper Munch',
       description='Generates horizon plots.',
       # long_description=long_description,
