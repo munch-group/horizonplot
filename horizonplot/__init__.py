@@ -22,19 +22,29 @@ def horizon(row, i, cut):
     """
     val = getattr(row, i)
 
-    if val < 0:
-        for i in range(4):
+    if np.isnan(val):
+        for i in range(8):
             yield 0
 
-    val = abs(val)
-    for i in range(3):
-        yield min(cut, val)
-        val = max(0, val-cut)
-    yield int(not isclose(val, 0, abs_tol=1e-8)) * cut
+        # for nan color
+        yield 1
+    else:
+        if val < 0:
+            for i in range(4):
+                yield 0
 
-    if val >= 0:
-        for i in range(4):
-            yield 0
+        val = abs(val)
+        for i in range(3):
+            yield min(cut, val)
+            val = max(0, val-cut)
+        yield int(not isclose(val, 0, abs_tol=1e-8)) * cut
+
+        if val >= 0:
+            for i in range(4):
+                yield 0
+
+        # for nan color
+        yield 0
 
 def chrom_sort(item):
     """
@@ -73,7 +83,7 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
     row_iter = df.itertuples()
     col_iterators = zip(*(horizon(row, key, cut) for row in row_iter))
     col_names = ['yp1', 'yp2', 'yp3', 'yp4', 
-                 'yn1', 'yn2', 'yn3', 'yn4']
+                 'yn1', 'yn2', 'yn3', 'yn4', 'nan']
 
     df2 = (df[[key, start, chrom, pop]]
            .assign(**dict(zip(col_names, col_iterators)))
@@ -142,8 +152,8 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
                             )
 
             # plot colors
-            colours = sns.color_palette("Blues", 3) + ['black'] + \
-                    sns.color_palette("Reds", 3) + ['grey']
+            colours = sns.color_palette("Blues", 3) + ['midnightblue'] + \
+                    sns.color_palette("Reds", 3) + ['darkred'] + ['lightgrey']
 
             # first y tick
             ytic1 = round_to_1_signif(cut / 3)
@@ -205,6 +215,8 @@ if __name__ == "__main__":
 #                    'pi': list(np.sin(np.linspace(-np.pi, 10*np.pi, 1*n))+0.1) * pops })
                      'pi': np.add(list(np.sin(np.linspace(-np.pi, 10*np.pi, 1*n))) * pops, np.random.random(n*pops)) })
  
+    df.loc[(df.start > 40) & (df.start < 60), 'pi'] = np.nan
+
     g = sns.FacetGrid(df, 
                         col='chrom', 
                         row='pop',
