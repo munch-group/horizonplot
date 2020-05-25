@@ -43,7 +43,7 @@ def chrom_sort(item):
     if item.startswith('chr'):
         item = item[3:]
     if item.isdigit():
-        return int(item)
+        return item.zfill(3)
     else:
         return item
 
