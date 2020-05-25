@@ -27,7 +27,7 @@ def horizon(row, i, cut):
             yield 0
 
         # for nan color
-        yield 1
+        yield cut
     else:
         if val < 0:
             for i in range(4):
