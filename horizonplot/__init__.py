@@ -72,7 +72,7 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
         
     # set cut if not set
     if cut is 'fixed':
-        cut = np.max(np.max(df[key]), np.max(-df[key])) / 3
+        cut = np.max([np.max(df[key]), np.max(-df[key])]) / 3
 
     # FIXME: cut should be either:
     # value applied to all
