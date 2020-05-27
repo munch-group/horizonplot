@@ -63,7 +63,8 @@ def round_to_1_signif(x):
     """
     return round(x, -int(floor(log10(abs(x)))))
     
-def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='pop', pop_sorting=None, size=0.5, aspect=40):
+def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='pop',
+                 beginzero=False, pop_sorting=None, size=0.5, aspect=40):
     """
     Horizon bar plot made allowing multiple chromosomes and multiple samples.
     """
@@ -95,18 +96,6 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
 
     df2 = df3
 
-    # # instead group df2 by col, row and add bounds to each group
-    # def add_boundries(df):
-    #     df = df.copy()
-    #     begin, end = df.iloc[0], df.iloc[-1]
-    #     begin[col_names], end[col_names] = 0, 0
-    #     df = pd.concat([begin.to_frame().T, df, end.to_frame().T], ignore_index=True)
-    #     print(df.head(1))
-    #     print(df.tail(1))
-    #     print()
-    #     return df
-    # df2 = df2.groupby([col, row]).apply(add_boundries)
-
     # chromosome names
     chrom_names = list(df.groupby(chrom).groups.keys())
     sorted_chrom_names = sorted(chrom_names, key=chrom_sort)
@@ -117,16 +106,12 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
     # number of populations
     nr_pop = len(df.groupby(pop).groups)
     
-    # sizes of chromosomes
-    chrom_sizes = list()
-    for chrom_name in sorted_chrom_names:
-        chrom_subset = df.loc[df[chrom] == chrom_name]
-        est_chrom_len = np.max(chrom_subset.start) + width
-        chrom_sizes.append(est_chrom_len)
-        
-    # relative width of each plot facet 
-    # (using lengths of chromosomes)
-    facet_widths_ratios = chrom_sizes# * nr_pop
+    # start and end of data on each chormosome
+    ranges_df = df.groupby('chrom').start.agg(['min', 'max'])
+    data_ranges = [tuple(ranges_df.loc[x]) for x in sorted_chrom_names]
+
+    # relative width of each plot facet. using data ranges (lengths of chromosomes)
+    facet_widths_ratios = [e - s for (s, e) in data_ranges]
 
     # make the plot
     with sns.axes_style("ticks"):
@@ -147,8 +132,7 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
                             aspect=aspect,
                             col_order=sorted_chrom_names,
                             row_order=pop_sorting,                      
-                            gridspec_kws={'hspace':0.0, 
-                                            "width_ratios": facet_widths_ratios}
+                            gridspec_kws={'hspace':0.0, 'width_ratios': facet_widths_ratios}
                             )
 
             # plot colors
@@ -190,11 +174,15 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
             g.map(add_chrom_labels, chrom)
 
             for arr in g.axes:
-                for ax, max_val in zip(arr, facet_widths_ratios):
-                    ax.set_xlim(0, max_val+1)
+                for ax, xlim in zip(arr, data_ranges):
+                    if beginzero:
+                        ax.set_xlim(0, xlim[1]+1)
+                        ax.set(xticks=np.arange(0, xlim[1], round_to_1_signif(xlim[1]) / 10))
+                    else:
+                        ax.set_xlim(xlim[0], xlim[1]+1)
+                        ax.set(xticks=np.arange(xlim[0], xlim[1], round_to_1_signif(xlim[1]) / 10))
                     ax.set_ylim(0, cut)
                     ax.set(xlabel='', ylabel='')
-                    ax.set(xticks=np.arange(0, max_val, round_to_1_signif(max_val) / 10))
     #                ax.set_yticks([ytic1, ytic1*2, ytic1*3])
                     ax.set_yticks([ytic1*1.5])
                     g.set_titles('', '')
@@ -208,8 +196,8 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
 
 if __name__ == "__main__":
 
-    n = 1500
-    pops = 50
+    n = 150
+    pops = 5
 
     df = pd.DataFrame({'chrom': ['chr1']*pops*n,
                     'pop': [x for y in ([chr(65+i)]*n for i in range(pops)) for x in y],
@@ -217,6 +205,9 @@ if __name__ == "__main__":
 #                    'pi': list(np.sin(np.linspace(-np.pi, 10*np.pi, 1*n))+0.1) * pops })
                      'pi': np.add(list(np.sin(np.linspace(-np.pi, 10*np.pi, 1*n))) * pops, np.random.random(n*pops)) })
  
+
+    df['start'] += 50
+
     df.loc[(df.start > 40) & (df.start < 60), 'pi'] = np.nan
 
     g = sns.FacetGrid(df, 
@@ -227,7 +218,7 @@ if __name__ == "__main__":
 
     plt.savefig('tmp2.pdf')
 
-    fig = horizonplot(df, 'pi', width=1, col='chrom', row='pop', size=0.3, aspect=100)
+    fig = horizonplot(df, 'pi', width=1, col='chrom', row='pop', size=0.3, aspect=100, beginzero=True)
     plt.savefig('tmp.pdf')
     # plt.close(fig)  # close to allow garbage collection, also suppresses inline plot
     # #         gc.collect()
