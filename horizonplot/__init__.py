@@ -64,7 +64,9 @@ def round_to_1_signif(x):
     return round(x, -int(floor(log10(abs(x)))))
     
 def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='pop',
-                 beginzero=False, pop_sorting=None, size=0.5, aspect=40):
+                beginzero=False, pop_sorting=None, size=0.5, aspect=40,
+                colours = sns.color_palette("Blues", 3) + ['midnightblue'] + \
+                          sns.color_palette("Reds", 3) + ['darkred'] + ['lightgrey']):
     """
     Horizon bar plot made allowing multiple chromosomes and multiple samples.
     """
@@ -134,10 +136,6 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
                             row_order=pop_sorting,                      
                             gridspec_kws={'hspace':0.0, 'width_ratios': facet_widths_ratios}
                             )
-
-            # plot colors
-            colours = sns.color_palette("Blues", 3) + ['midnightblue'] + \
-                    sns.color_palette("Reds", 3) + ['darkred'] + ['lightgrey']
 
             # first y tick
             ytic1 = round_to_1_signif(cut / 3)
