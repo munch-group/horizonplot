@@ -94,7 +94,7 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
 
     df3 = pd.DataFrame(dict((col, list(chain.from_iterable(zip(df2[col].values, df2[col].values)))) for col in df2))
     #df3[start] = list(df3[start].values[1:]) + [df3[start].values[-1] + width]
-    df3[start] = df3.groupby(row).start.apply(lambda sr: pd.concat([sr.iloc[1:], pd.Series([df3[start].iloc[-1] + width])])).values
+    df3[start] = df3.groupby(row, sort=False).start.apply(lambda sr: pd.concat([sr.iloc[1:], pd.Series([df3[start].iloc[-1] + width])])).values
 
     df2 = df3
 
