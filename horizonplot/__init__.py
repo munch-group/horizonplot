@@ -77,7 +77,7 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
     if cut is 'fixed':
         cut = np.max([np.max(df[key]), np.max(-df[key])]) / 3
 
-    # FIXME: cut should be either:
+    # TODO: cut should be either:
     # value applied to all
     # 'fixed' (default) computing a shared cutoff for all rows
     # 'adaptive' computing a cutoff that fits each row.
