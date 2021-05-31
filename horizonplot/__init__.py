@@ -65,8 +65,11 @@ def round_to_1_signif(x):
     
 def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='pop',
                 beginzero=False, pop_sorting=None, size=0.5, aspect=40,
-                colours = sns.color_palette("Blues", 3) + ['midnightblue'] + \
-                          sns.color_palette("Reds", 3) + ['darkred'] + ['lightgrey']):
+                colours = ['#314E9F', '#36AAA8', '#D7E2D4'] + ['midnightblue'] + \
+                          ['#F5DE90', '#F5DE90', '#A51023'] + ['darkred'] + ['whitesmoke']):
+                # colours = sns.color_palette("Blues", 3) + ['midnightblue'] + \
+                #           sns.color_palette("Reds", 3) + ['darkred'] + ['lightgrey']):
+
     """
     Horizon bar plot made allowing multiple chromosomes and multiple samples.
     """
