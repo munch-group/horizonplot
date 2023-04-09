@@ -63,11 +63,17 @@ def round_to_1_signif(x):
     """
     return round(x, -int(floor(log10(abs(x)))))
     
-def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='pop',
+def horizonplot(df, key, width, 
+                cut=None, # float, takes precedence over quantile_span
+                quantile_span = None, # tuple: (0.05, 0.95)
+                start='start', col='chrom', row='pop',
                 beginzero=False, pop_sorting=None, size=0.5, aspect=40,
-                colours = ['#314E9F', '#36AAA8', '#D7E2D4'] + ['midnightblue'] + \
-                          ['#F5DE90', '#F5DE90', '#A51023'] + ['darkred'] + ['whitesmoke']):
-                # colours = sns.color_palette("Blues", 3) + ['midnightblue'] + \
+                colors = ['#CCE2DF', '#59A9A8', '#374E9B', 'midnightblue',
+                          '#F2DE9A', '#DA8630', '#972428', 'darkred',
+                          '#D3D3D3']):
+                # colours = ['#314E9F', '#36AAA8', '#D7E2D4'] + ['midnightblue'] + \
+                #           ['#F5DE90', '#F5DE90', '#A51023'] + ['darkred'] + ['whitesmoke']):
+                # colors = sns.color_palette("Blues", 3) + ['midnightblue'] + \
                 #           sns.color_palette("Reds", 3) + ['darkred'] + ['lightgrey']):
 
     """
@@ -77,13 +83,11 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
     pop, chrom = row, col
         
     # set cut if not set
-    if cut is 'fixed':
+    if cut is not None:
         cut = np.max([np.max(df[key]), np.max(-df[key])]) / 3
-
-    # TODO: cut should be either:
-    # value applied to all
-    # 'fixed' (default) computing a shared cutoff for all rows
-    # 'adaptive' computing a cutoff that fits each row.
+    elif quantile_span:
+        cut=max(np.abs(np.nanquantile(df[col], quantile_span[0])), 
+                np.abs(np.nanquantile(df[col], quantile_span[1]))) / 3,
 
     # make the data frame to plot
     row_iter = df.itertuples()
@@ -143,14 +147,14 @@ def horizonplot(df, key, width, cut='fixed', start='start', col='chrom', row='po
             # first y tick
             ytic1 = round_to_1_signif(cut / 3)
 
-            for col_name, colour in zip(col_names, colours):
+            for col_name, color in zip(col_names, colors):
                 plt.setp(g.fig.texts, text="") # hack to make y facet labels align...
                 # map barplots to each facet
                 g.map(plt.fill_between, 
                     start, 
                     col_name, 
                     y2=0,
-                    color=colour,
+                    color=color,
                     linewidth=0,
                     capstyle='butt')
 
