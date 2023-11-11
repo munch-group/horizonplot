@@ -81,9 +81,9 @@ def horizonplot(df, key, width,
     """
 
     pop, chrom = row, col
-        
+
     # set cut if not set
-    if cut is not None:
+    if cut is None:
         cut = np.max([np.max(df[key]), np.max(-df[key])]) / 3
     elif quantile_span:
         cut=max(np.abs(np.nanquantile(df[col], quantile_span[0])), 
